@@ -9,6 +9,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
@@ -70,7 +71,7 @@ fun MusicApp(viewModel: MusicViewModel = viewModel()) {
         // Header
         Card(
             modifier = Modifier.fillMaxWidth(),
-            shape = androidx.compose.foundation.shape.RoundedCornerShape(
+            shape = RoundedCornerShape(
                 bottomStart = 0.dp,
                 bottomEnd = 0.dp
             ),
@@ -133,13 +134,16 @@ fun MusicApp(viewModel: MusicViewModel = viewModel()) {
                                 Toast.LENGTH_SHORT
                             ).show()
                         },
-                        onPlayClick = { song ->
+                        onMoreOptionsClick = { song ->
+                            // Implement what should happen when more options is clicked
+                            // For example, show a toast or a menu
                             Toast.makeText(
                                 context,
-                                "Play clicked: ${song.title}",
+                                "More options for: ${song.title}",
                                 Toast.LENGTH_SHORT
                             ).show()
-                        }
+                        },
+                        onPlayClick = TODO()
                     )
                 }
             }

@@ -6,6 +6,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -13,11 +14,15 @@ import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -25,16 +30,231 @@ import coil.compose.AsyncImage
 // Remove unused import - only add if you actually use String.toUri() elsewhere
 
 @Composable
-fun SongItem(
-    song: Song,
+fun MusicAppScreen(
+    viewModel: MusicViewModel,
+    onRequestPermission: () -> Unit,
     onSongClick: (Song) -> Unit,
     onPlayClick: (Song) -> Unit
 ) {
-    Card(
+    val songs by viewModel.songs.observeAsState(emptyList())
+    val isLoading by viewModel.isLoading.observeAsState(false)
+    val hasPermission by viewModel.hasPermission.observeAsState(false)
+
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background
+    ) {
+        when {
+            !hasPermission -> PermissionDeniedScreen(onRequestPermission)
+            isLoading -> LoadingScreen()
+            songs.isEmpty() -> EmptyState()
+            else -> MainContent(
+                songs = songs,
+                onSongClick = onSongClick,
+                onPlayClick = onPlayClick
+            )
+        }
+    }
+}
+
+@Composable
+private fun MainContent(
+    songs: List<Song>,
+    onSongClick: (Song) -> Unit,
+    onPlayClick: (Song) -> Unit
+) {
+    // Split songs into popular and new collections
+    val popularSongs = remember(songs) { songs.take(5) }
+    val newCollection = remember(songs) { songs.takeLast(5) }
+
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(bottom = 16.dp)
+    ) {
+        item {
+            GreetingSection()
+        }
+
+        item {
+            CategoriesSection()
+        }
+
+        item {
+            SectionHeader(title = "Popular Songs", showAll = true)
+        }
+
+        items(popularSongs) { song ->
+            SongItem(
+                song = song,
+                onSongClick = onSongClick,
+                onPlayClick = onPlayClick,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+            )
+        }
+
+        item {
+            SectionHeader(title = "New Collection", showAll = false)
+        }
+
+        items(newCollection) { song ->
+            SongItem(
+                song = song,
+                onSongClick = onSongClick,
+                onPlayClick = onPlayClick,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+            )
+        }
+
+        item {
+            DiscoverSection(songs.size)
+        }
+    }
+}
+
+@Composable
+private fun GreetingSection() {
+    Column(
+        modifier = Modifier.padding(16.dp)
+    ) {
+        Text(
+            text = "Good Morning!",
+            style = MaterialTheme.typography.headlineSmall,
+            color = MaterialTheme.colorScheme.onBackground
+        )
+        Text(
+            text = "Antony Das",
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
+        )
+    }
+}
+
+@Composable
+private fun CategoriesSection() {
+    Column(
+        modifier = Modifier.padding(horizontal = 16.dp)
+    ) {
+        Text(
+            text = "Select Categories",
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onBackground,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
+
+        LazyRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            item {
+                CategoryChip("All", selected = true)
+            }
+            item {
+                CategoryChip("Party")
+            }
+            item {
+                CategoryChip("Blues")
+            }
+            item {
+                CategoryChip("Sad")
+            }
+            item {
+                CategoryChip("Hip+")
+            }
+        }
+    }
+}
+
+
+
+@Composable
+private fun CategoryChip(
+    text: String,
+    selected: Boolean = false
+) {
+    Surface(
+        shape = RoundedCornerShape(16.dp),
+        color = if (selected) MaterialTheme.colorScheme.primary
+        else MaterialTheme.colorScheme.surfaceVariant,
+        modifier = Modifier.clickable { /* Handle category selection */ }
+    ) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.labelMedium,
+            color = if (selected) MaterialTheme.colorScheme.onPrimary
+            else MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+        )
+    }
+}
+
+@Composable
+private fun SectionHeader(
+    title: String,
+    showAll: Boolean
+) {
+    Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 4.dp)
-            .clickable { onSongClick(song) },
+            .padding(horizontal = 16.dp, vertical = 16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleLarge,
+            color = MaterialTheme.colorScheme.onBackground,
+            modifier = Modifier.weight(1f)
+        )
+
+        if (showAll) {
+            Text(
+                text = "See all>",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.clickable { /* Handle see all */ }
+            )
+        }
+    }
+}
+
+@Composable
+private fun DiscoverSection(songCount: Int) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp)
+            .background(
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                shape = RoundedCornerShape(16.dp)
+            )
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = "Discover $songCount songs",
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onBackground,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
+
+        Text(
+            text = "Discover",
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier
+                .padding(8.dp)
+                .clickable { /* Handle discover */ }
+        )
+    }
+}
+
+@Composable
+fun SongItem(
+    song: Song,
+    onSongClick: (Song) -> Unit,
+    onPlayClick: (Song) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier.clickable { onSongClick(song) },
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         shape = RoundedCornerShape(12.dp)
     ) {
@@ -44,77 +264,29 @@ fun SongItem(
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Album Art with demo images
-            Card(
+            // Album Art
+            val albumArtUri = ContentUris.withAppendedId(
+                Uri.parse("content://media/external/audio/albumart"),
+                song.albumId
+            )
+
+            Box(
                 modifier = Modifier.size(60.dp),
-                shape = RoundedCornerShape(8.dp)
+                contentAlignment = Alignment.Center
             ) {
-                // Try real album art first, then demo images
-                val albumArtUri = ContentUris.withAppendedId(
-                    Uri.parse("content://media/external/audio/albumart"),
-                    song.albumId
+                AsyncImage(
+                    model = albumArtUri,
+                    contentDescription = "Album Art",
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop,
+                    error = androidx.compose.ui.graphics.painter.ColorPainter(MaterialTheme.colorScheme.primary)
                 )
-
-                // For demo songs, use colorful backgrounds with music icons
-                if (song.data.startsWith("/demo/")) {
-                    // Generate consistent color based on song ID
-                    val colors = listOf(
-                        Color(0xFF6200EA), // Purple
-                        Color(0xFF00BCD4), // Cyan
-                        Color(0xFF4CAF50), // Green
-                        Color(0xFFFF5722), // Deep Orange
-                        Color(0xFF3F51B5), // Indigo
-                        Color(0xFFE91E63), // Pink
-                        Color(0xFF9C27B0), // Purple
-                        Color(0xFF2196F3), // Blue
-                        Color(0xFFFF9800), // Orange
-                        Color(0xFF795548), // Brown
-                        Color(0xFF607D8B), // Blue Grey
-                        Color(0xFFFFEB3B), // Yellow
-                        Color(0xFF8BC34A), // Light Green
-                        Color(0xFFCDDC39), // Lime
-                        Color(0xFFFFC107)  // Amber
-                    )
-
-                    val colorIndex = (song.id % colors.size).toInt()
-                    val backgroundColor = colors[colorIndex]
-
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(backgroundColor),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            Icons.Default.MusicNote,
-                            contentDescription = "Album Art",
-                            tint = Color.White,
-                            modifier = Modifier.size(32.dp)
-                        )
-                    }
-                } else {
-                    // For real songs, try to load album art
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        AsyncImage(
-                            model = albumArtUri,
-                            contentDescription = "Album Art",
-                            modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Crop,
-                            error = androidx.compose.ui.graphics.painter.ColorPainter(MaterialTheme.colorScheme.primary)
-                        )
-
-                        // Overlay icon for error state (will show through transparent error painter)
-                        Icon(
-                            Icons.Default.MusicNote,
-                            contentDescription = "Music",
-                            tint = Color.White,
-                            modifier = Modifier.size(30.dp)
-                        )
-                    }
-                }
+                Icon(
+                    Icons.Default.MusicNote,
+                    contentDescription = "Music",
+                    tint = Color.White,
+                    modifier = Modifier.size(30.dp)
+                )
             }
 
             // Song Info
@@ -140,13 +312,6 @@ fun SongItem(
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                     modifier = Modifier.padding(top = 4.dp)
                 )
-
-                Text(
-                    text = song.getFormattedDuration(),
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
-                    modifier = Modifier.padding(top = 2.dp)
-                )
             }
 
             // Play Button
@@ -171,21 +336,28 @@ fun SongItem(
 }
 
 @Composable
-fun SongsList(
-    songs: List<Song>,
-    onSongClick: (Song) -> Unit,
-    onPlayClick: (Song) -> Unit
-) {
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(vertical = 8.dp)
+fun PermissionDeniedScreen(onRequestPermission: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        items(songs) { song ->
-            SongItem(
-                song = song,
-                onSongClick = onSongClick,
-                onPlayClick = onPlayClick
-            )
+        Text(
+            text = "Permission Denied",
+            style = MaterialTheme.typography.headlineSmall,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(bottom = 16.dp)
+        )
+        Text(
+            text = "This app needs permission to access your music files to play songs. Please grant the permission to continue.",
+            style = MaterialTheme.typography.bodyLarge,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(bottom = 24.dp)
+        )
+        Button(onClick = onRequestPermission) {
+            Text("Grant Permission")
         }
     }
 }
@@ -196,19 +368,7 @@ fun LoadingScreen() {
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            CircularProgressIndicator(
-                modifier = Modifier.size(48.dp),
-                color = MaterialTheme.colorScheme.primary
-            )
-            Text(
-                text = "Loading songs...",
-                modifier = Modifier.padding(top = 16.dp),
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-            )
-        }
+        CircularProgressIndicator()
     }
 }
 
@@ -218,72 +378,9 @@ fun EmptyState() {
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Icon(
-                Icons.Default.MusicNote,
-                contentDescription = "No Music",
-                modifier = Modifier.size(100.dp),
-                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
-            )
-
-            Text(
-                text = "No music found",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Medium,
-                modifier = Modifier.padding(top = 16.dp),
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-            )
-
-            Text(
-                text = "Add some music to your device",
-                fontSize = 14.sp,
-                modifier = Modifier.padding(top = 8.dp),
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
-            )
-        }
-    }
-}
-
-@Composable
-fun PermissionDeniedScreen(onRequestPermission: () -> Unit) {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(32.dp)
-        ) {
-            Icon(
-                Icons.Default.MusicNote,
-                contentDescription = "Permission Required",
-                modifier = Modifier.size(100.dp),
-                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
-            )
-
-            Text(
-                text = "Permission Required",
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(top = 16.dp),
-                color = MaterialTheme.colorScheme.onSurface
-            )
-
-            Text(
-                text = "This app needs permission to access your music files",
-                fontSize = 14.sp,
-                modifier = Modifier.padding(top = 8.dp, bottom = 32.dp),
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-            )
-
-            Button(
-                onClick = onRequestPermission,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Grant Permission")
-            }
-        }
+        Text(
+            text = "No songs found.",
+            style = MaterialTheme.typography.headlineSmall
+        )
     }
 }

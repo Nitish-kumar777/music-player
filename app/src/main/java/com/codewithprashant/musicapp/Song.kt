@@ -7,11 +7,14 @@ data class Song(
     val album: String,
     val albumId: Long,
     val duration: Long,
-    val data: String // File path
+    val data: String,
+    val dateAdded: Long = 0L,
+    val playCount: Int = 0,
+    val year: Int = 0
 ) {
     fun getFormattedDuration(): String {
-        val minutes = duration / 1000 / 60
         val seconds = (duration / 1000) % 60
-        return String.format("%d:%02d", minutes, seconds)
+        val minutes = (duration / (1000 * 60)) % 60
+        return String.format("%02d:%02d", minutes, seconds)
     }
 }

@@ -80,7 +80,7 @@ fun ArtistItem(artist: String, songs: List<AudioFile>) {
         ) {
             Column {
                 songs.forEach { song ->
-                    SongListItem(
+                    SimpleSongListItem(
                         song = song,
                         modifier = Modifier.padding(start = 72.dp)
                     )
@@ -91,5 +91,17 @@ fun ArtistItem(artist: String, songs: List<AudioFile>) {
                 }
             }
         }
+    }
+}
+
+@Composable
+fun SimpleSongListItem(song: AudioFile, modifier: Modifier = Modifier) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(text = song.title, color = Color.White)
     }
 }

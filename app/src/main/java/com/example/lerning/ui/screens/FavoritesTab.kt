@@ -1,9 +1,13 @@
 package com.example.lerning.ui.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material3.Divider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -15,22 +19,31 @@ import com.example.lerning.model.AudioFile
 import com.example.lerning.ui.components.SongListItem
 
 @Composable
-fun FavoritesTab(audioFiles: List<AudioFile>) {
-    val favoriteSongs = remember(audioFiles) { audioFiles.take(3) }
-
-    if (favoriteSongs.isEmpty()) {
-        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text("No favorites yet", color = Color.White)
-        }
-    } else {
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 16.dp)
-        ) {
-            items(favoriteSongs) { song ->
-                SongListItem(song, modifier = Modifier.padding(vertical = 8.dp))
-                Divider(color = Color.Gray.copy(alpha = 0.2f))
+fun FavoritesTab(
+    favorites: List<AudioFile>,
+    onRemoveFavorite: (AudioFile) -> Unit
+) {
+    Column {
+        favorites.forEach { song ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = song.title,
+                    modifier = Modifier.weight(1f),
+                    color = Color.White
+                )
+                Icon(
+                    imageVector = Icons.Default.Favorite,
+                    contentDescription = "Remove Favorite",
+                    tint = Color.Red,
+                    modifier = Modifier
+                        .size(24.dp)
+                        .clickable { onRemoveFavorite(song) }
+                )
             }
         }
     }

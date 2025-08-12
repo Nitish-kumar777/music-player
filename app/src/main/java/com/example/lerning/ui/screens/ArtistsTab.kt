@@ -13,7 +13,10 @@ import com.example.lerning.model.AudioFile
 import com.example.lerning.ui.components.ArtistItem
 
 @Composable
-fun ArtistsTab(audioFiles: List<AudioFile>) {
+fun ArtistsTab(
+    audioFiles: List<AudioFile>,
+    modifier: Modifier = Modifier
+) {
     val artistsWithSongs = remember(audioFiles) {
         audioFiles.groupBy { it.artist }
             .toList()

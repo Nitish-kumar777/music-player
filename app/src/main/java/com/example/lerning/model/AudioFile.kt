@@ -9,5 +9,5 @@ data class AudioFile(
     val album: String,
     val duration: Long,
     val contentUri: Uri,
-    val albumArtUri: Uri
+    val albumArtUri: Uri,
 )

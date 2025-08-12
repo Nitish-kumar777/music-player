@@ -1,4 +1,4 @@
-package com.example.lerning
+package com.example.lerning.model
 
 import android.net.Uri
 

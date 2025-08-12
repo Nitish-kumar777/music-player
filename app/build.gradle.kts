@@ -41,6 +41,8 @@ android {
 
 dependencies {
     implementation(libs.ui.graphics)
+    implementation(libs.androidx.foundation)
+    implementation(libs.androidx.animation)
     val nav_version = "2.9.3"
 
     implementation(libs.androidx.core.ktx)
